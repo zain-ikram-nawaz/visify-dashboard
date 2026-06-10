@@ -18,8 +18,6 @@ export default function LoginPage() {
       await api.post('/auth/login', form);
 
       toast.success('Welcome back!');
-
-      // Page refresh ke sath redirect karein taake Next.js middleware active ho jaye
       router.push('/dashboard');
       router.refresh();
     } catch (err) {

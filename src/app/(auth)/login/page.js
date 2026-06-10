@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import Cookies from 'js-cookie';
 import api from '../../../../lib/api';
 
 export default function LoginPage() {
@@ -14,8 +15,12 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      // API call hote hi backend automatically browser mein cookie set kar dega
-      await api.post('/auth/login', form);
+      const res = await api.post('/auth/login', form);
+      const { token } = res.data;
+
+      // Token frontend domain pe save karo taake middleware aur API dono use kar sakein
+      Cookies.set('token', token, { expires: 7, path: '/', sameSite: 'Strict' });
+      localStorage.setItem('token', token);
 
       toast.success('Welcome back!');
       router.push('/dashboard');

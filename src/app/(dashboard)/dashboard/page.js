@@ -101,6 +101,17 @@ export default function DashboardPage() {
                     </div>
                     <span className="text-indigo-400 text-xl">→</span>
                 </div>
+                {/* Configurator Link */}
+                <div
+                    className="bg-gray-900 border border-gray-800 rounded-xl p-5 mb-8 flex items-center justify-between cursor-pointer hover:border-indigo-500 transition"
+                    onClick={() => router.push('/dashboard/configurator')}
+                >
+                    <div>
+                        <p className="font-semibold">3D Configurator Builder</p>
+                        <p className="text-gray-400 text-sm mt-1">Build advanced configurators with parts and variants</p>
+                    </div>
+                    <span className="text-indigo-400 text-xl">→</span>
+                </div>
                 {/* API Key */}
                 <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 mb-8">
                     <p className="text-gray-400 text-sm mb-2">Your API Key</p>

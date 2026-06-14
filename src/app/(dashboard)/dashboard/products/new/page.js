@@ -13,6 +13,7 @@ export default function NewProductPage() {
     name: '',
     modelUrl: '',
     materials: '',
+    shopifyHandle: '', // ← yeh add karo
   });
   const [variants, setVariants] = useState([
     { label: 'Default', color: '#4F46E5' },
@@ -85,11 +86,9 @@ export default function NewProductPage() {
         name: form.name,
         modelUrl: form.modelUrl,
         variants,
-        materials: form.materials
-          ? form.materials.split(',').map((m) => m.trim())
-          : [],
+        materials: form.materials ? form.materials.split(',').map(m => m.trim()) : [],
+        shopifyHandle: form.shopifyHandle || null, // ← yeh add karo
       });
-
       toast.success('Product added successfully!');
       router.push('/dashboard');
     } catch (err) {
@@ -133,7 +132,22 @@ export default function NewProductPage() {
               className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition"
             />
           </div>
-
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+            <label className="block text-sm text-gray-400 mb-2">
+              Shopify Product Handle
+              <span className="text-gray-600 ml-2">(optional)</span>
+            </label>
+            <input
+              type="text"
+              value={form.shopifyHandle}
+              onChange={(e) => setForm({ ...form, shopifyHandle: e.target.value })}
+              placeholder="e.g. modern-lounge-chair"
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition"
+            />
+            <p className="text-gray-600 text-xs mt-2">
+              Find this in Shopify Admin → Products → your product → scroll down to "Search engine listing"
+            </p>
+          </div>
           {/* 3D Model Upload */}
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
             <label className="block text-sm text-gray-400 mb-2">3D Model File</label>
@@ -167,6 +181,7 @@ export default function NewProductPage() {
                     </>
                   )}
                 </div>
+
                 <input
                   type="file"
                   accept=".glb,.gltf"

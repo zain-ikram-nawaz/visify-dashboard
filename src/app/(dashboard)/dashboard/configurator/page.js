@@ -24,7 +24,7 @@ export default function ConfiguratorPage() {
       setLoading(false);
     }
   };
-
+console.log(products,"conf")
   const handleDelete = async (id) => {
     if (!confirm('Delete this configurator?')) return;
     try {
@@ -57,7 +57,7 @@ export default function ConfiguratorPage() {
         >
           + New Configurator
         </button>
-        
+
       </nav>
 
       <div className="max-w-5xl mx-auto p-6">

@@ -9,6 +9,7 @@ export default function ConfiguratorBuilderPage() {
   const router = useRouter();
   const { id } = useParams();
   const [product, setProduct] = useState(null);
+  const [brand, setBrand] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showAddPart, setShowAddPart] = useState(false);
   const [showAddVariant, setShowAddVariant] = useState(null); // partId
@@ -23,7 +24,6 @@ export default function ConfiguratorBuilderPage() {
     isDefault: false,
     isRequired: false,
   });
-
   const [variantForm, setVariantForm] = useState({
     label: '',
     type: 'color',
@@ -37,8 +37,12 @@ export default function ConfiguratorBuilderPage() {
 
   const fetchProduct = async () => {
     try {
-      const res = await api.get(`/configurator/products/${id}`);
-      setProduct(res.data.product);
+      const [productRes, brandRes] = await Promise.all([
+        api.get(`/configurator/products/${id}`),
+        api.get('/auth/me'),
+      ]);
+      setProduct(productRes.data.product);
+      setBrand(brandRes.data.brand);
     } catch (err) {
       toast.error('Failed to load configurator');
       router.push('/dashboard/configurator');
@@ -196,6 +200,46 @@ export default function ConfiguratorBuilderPage() {
             </div>
             <div className="text-3xl">📦</div>
           </div>
+        </div>
+
+        {/* Shopify Embed Code */}
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Shopify Embed Code</p>
+              <p className="text-gray-400 text-xs">
+                Apne Shopify product page ki theme file mein paste karo
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                const code = `<div id="visify-configurator"></div>\n<script>\n  window.VISIFY_API_KEY = '${brand?.apiKey}';\n  window.VISIFY_PRODUCT_ID = '{{ product.handle }}';\n<\/script>\n<script type="module" src="${process.env.NEXT_PUBLIC_VIEWER_URL || 'https://viewer.visify.io'}/src/index.js"><\/script>`;
+                navigator.clipboard.writeText(code);
+                toast.success('Embed code copied!');
+              }}
+              className="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap"
+            >
+              Copy Code
+            </button>
+          </div>
+          <pre className="bg-gray-800 rounded-lg p-4 text-xs text-gray-300 overflow-x-auto whitespace-pre">
+{`<div id="visify-configurator"></div>
+<script>
+  window.VISIFY_API_KEY = '${brand?.apiKey || 'loading...'}';
+  window.VISIFY_PRODUCT_ID = '{{ product.handle }}';
+</script>
+<script type="module" src="YOUR_VIEWER_URL/src/index.js"></script>`}
+          </pre>
+          {product?.shopifyHandle && (
+            <p className="text-gray-600 text-xs mt-2">
+              Linked Shopify handle: <span className="text-indigo-400">{product.shopifyHandle}</span>
+            </p>
+          )}
+          {!product?.shopifyHandle && (
+            <p className="text-yellow-600 text-xs mt-2">
+              ⚠ Shopify handle set nahi hua — configurator create/edit karte waqt handle daalo
+            </p>
+          )}
         </div>
 
         {/* Parts Section */}

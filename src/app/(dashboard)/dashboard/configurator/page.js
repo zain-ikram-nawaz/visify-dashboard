@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import api from '../../../../../lib/api';
 import toast from 'react-hot-toast';
+import api from '../../../../../lib/api';
 
 export default function ConfiguratorPage() {
   const router = useRouter();
@@ -24,7 +24,7 @@ export default function ConfiguratorPage() {
       setLoading(false);
     }
   };
-console.log(products,"conf")
+
   const handleDelete = async (id) => {
     if (!confirm('Delete this configurator?')) return;
     try {
@@ -38,90 +38,93 @@ console.log(products,"conf")
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-gray-700 border-t-indigo-500 rounded-full animate-spin"></div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="vspin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
-      <nav className="border-b border-gray-800 bg-gray-900 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button onClick={() => router.push('/dashboard')} className="text-gray-400 hover:text-white">← Back</button>
-          <h1 className="text-xl font-bold">VI<span className="text-indigo-500">SI</span>FY</h1>
+    <div className="p-8 max-w-5xl">
+
+      {/* Header */}
+      <div className="flex items-start justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-snow tracking-tight">Configurators</h1>
+          <p className="text-muted text-sm mt-1">Build 3D product configurators with parts and variants</p>
         </div>
         <button
           onClick={() => router.push('/dashboard/configurator/new')}
-          className="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg text-sm font-medium"
+          className="bg-volt hover:bg-volt/90 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors"
         >
           + New Configurator
         </button>
+      </div>
 
-      </nav>
-
-      <div className="max-w-5xl mx-auto p-6">
-        <h2 className="text-2xl font-bold mb-2">3D Configurators</h2>
-        <p className="text-gray-400 mb-8">Build advanced product configurators with parts and variants</p>
-
-        {products.length === 0 ? (
-          <div className="bg-gray-900 border border-gray-800 border-dashed rounded-xl p-16 text-center">
-            <p className="text-5xl mb-4">⚙️</p>
-            <p className="text-gray-400 mb-6">No configurators yet</p>
-            <button
-              onClick={() => router.push('/dashboard/configurator/new')}
-              className="bg-indigo-600 hover:bg-indigo-700 px-6 py-3 rounded-lg font-medium"
-            >
-              Create First Configurator
-            </button>
+      {products.length === 0 ? (
+        <div className="bg-surface border border-rim border-dashed rounded-xl p-16 text-center">
+          <div className="w-12 h-12 bg-volt/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7B5CF5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+            </svg>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {products.map((p) => (
-              <div key={p._id} className="bg-gray-900 border border-gray-800 rounded-xl p-5 hover:border-indigo-500 transition">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <h3 className="font-semibold text-lg">{p.name}</h3>
-                    <p className="text-gray-500 text-sm mt-1">{p.description || 'No description'}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className={`text-xs px-2 py-1 rounded-full ${p.isPublished ? 'bg-green-900 text-green-400' : 'bg-yellow-900 text-yellow-400'}`}>
-                      {p.isPublished ? 'Published' : 'Draft'}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex gap-2 text-xs text-gray-500 mb-4">
-                  <span>🧩 {p.parts.length} parts</span>
-                  <span>•</span>
-                  <span>💰 Base ${p.basePrice}</span>
-                  {p.shopifyHandle && (
-                    <>
-                      <span>•</span>
-                      <span>🔗 {p.shopifyHandle}</span>
-                    </>
+          <p className="text-snow font-semibold mb-1">No configurators yet</p>
+          <p className="text-muted text-sm mb-6">Create your first 3D configurator to get started</p>
+          <button
+            onClick={() => router.push('/dashboard/configurator/new')}
+            className="bg-volt hover:bg-volt/90 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors"
+          >
+            Create first configurator
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {products.map((p) => (
+            <div key={p._id} className="bg-surface border border-rim rounded-xl p-5 glow-card">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-snow text-[15px] leading-snug truncate">{p.name}</h3>
+                  {p.description && (
+                    <p className="text-muted text-xs mt-1 truncate">{p.description}</p>
                   )}
                 </div>
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => router.push(`/dashboard/configurator/${p._id}`)}
-                    className="flex-1 bg-indigo-600 hover:bg-indigo-700 py-2 rounded-lg text-sm font-medium"
-                  >
-                    Edit & Build
-                  </button>
-                  <button
-                    onClick={() => handleDelete(p._id)}
-                    className="px-4 py-2 border border-red-900 hover:border-red-700 text-red-400 rounded-lg text-sm"
-                  >
-                    Delete
-                  </button>
-                </div>
+                <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ml-3 shrink-0 ${
+                  p.isPublished ? 'bg-ok/10 text-ok' : 'bg-warn/10 text-warn'
+                }`}>
+                  {p.isPublished ? 'Published' : 'Draft'}
+                </span>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+
+              <div className="flex gap-4 text-xs text-dim mb-4">
+                <span>{p.parts.length} parts</span>
+                <span>·</span>
+                <span>${p.basePrice} base</span>
+                {p.shopifyHandle && (
+                  <>
+                    <span>·</span>
+                    <span className="truncate">{p.shopifyHandle}</span>
+                  </>
+                )}
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => router.push(`/dashboard/configurator/${p._id}`)}
+                  className="flex-1 bg-volt hover:bg-volt/90 text-white py-2 rounded-lg text-sm font-semibold transition-colors"
+                >
+                  Edit & Build
+                </button>
+                <button
+                  onClick={() => handleDelete(p._id)}
+                  className="px-4 py-2 border border-rim hover:border-bad/50 text-muted hover:text-bad rounded-lg text-sm transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import api from '../../../../../lib/api';
 import toast from 'react-hot-toast';
+import api from '../../../../../lib/api';
 
 export default function AnalyticsPage() {
   const router = useRouter();
@@ -11,114 +11,102 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        const res = await api.get('/analytics');
+        setData(res.data);
+      } catch (err) {
+        toast.error('Failed to load analytics');
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchAnalytics();
   }, []);
 
-  const fetchAnalytics = async () => {
-    try {
-      const res = await api.get('/analytics');
-      setData(res.data);
-    } catch (err) {
-      toast.error('Failed to load analytics');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-gray-700 border-t-indigo-500 rounded-full animate-spin"></div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="vspin" />
       </div>
     );
   }
 
+  const maxViews = data?.dailyViews?.length
+    ? Math.max(...data.dailyViews.map((d) => d.count), 1)
+    : 1;
+
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="p-8 max-w-3xl">
 
-      {/* Navbar */}
-      <nav className="border-b border-gray-800 bg-gray-900 px-6 py-4 flex items-center gap-4">
-        <button
-          onClick={() => router.push('/dashboard')}
-          className="text-gray-400 hover:text-white transition"
-        >
-          ← Back
-        </button>
-        <h1 className="text-xl font-bold">
-          VI<span className="text-indigo-500">SI</span>FY
-        </h1>
-      </nav>
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-snow tracking-tight">Analytics</h1>
+        <p className="text-muted text-sm mt-1">Track your configurator performance</p>
+      </div>
 
-      <div className="max-w-4xl mx-auto p-6">
-        <h2 className="text-2xl font-bold mb-2">Analytics</h2>
-        <p className="text-gray-400 mb-8">Track your configurator performance</p>
-
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-            <p className="text-gray-400 text-sm mb-2">Total Configurator Views</p>
-            <p className="text-4xl font-bold text-indigo-400">{data?.totalViews}</p>
-          </div>
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-            <p className="text-gray-400 text-sm mb-2">Total Color Changes</p>
-            <p className="text-4xl font-bold text-indigo-400">{data?.totalColorChanges}</p>
-          </div>
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="bg-surface border border-rim rounded-xl p-6">
+          <p className="text-[11px] text-muted uppercase tracking-widest mb-3 font-medium">Total Views</p>
+          <p className="text-5xl font-bold text-volt tabular-nums">{data?.totalViews ?? 0}</p>
         </div>
-
-        {/* Popular Variants */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-6">
-          <h3 className="text-lg font-semibold mb-4">Most Popular Colors</h3>
-          {data?.popularVariants.length === 0 ? (
-            <p className="text-gray-500 text-sm">No color interactions yet</p>
-          ) : (
-            <div className="space-y-3">
-              {data?.popularVariants.map((v, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <span className="text-gray-400 text-sm w-4">{i + 1}</span>
-                  <div
-                    className="w-6 h-6 rounded-full border border-gray-700"
-                    style={{ background: v._id }}
-                  />
-                  <span className="text-gray-300 text-sm flex-1">{v._id}</span>
-                  <span className="text-indigo-400 font-semibold text-sm">
-                    {v.count} times
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
+        <div className="bg-surface border border-rim rounded-xl p-6">
+          <p className="text-[11px] text-muted uppercase tracking-widest mb-3 font-medium">Color Interactions</p>
+          <p className="text-5xl font-bold text-volt tabular-nums">{data?.totalColorChanges ?? 0}</p>
         </div>
+      </div>
 
-        {/* Daily Views */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-          <h3 className="text-lg font-semibold mb-4">Last 7 Days Views</h3>
-          {data?.dailyViews.length === 0 ? (
-            <p className="text-gray-500 text-sm">No views in last 7 days</p>
-          ) : (
-            <div className="space-y-3">
-              {data?.dailyViews.map((day, i) => (
+      {/* Popular Colors */}
+      <div className="bg-surface border border-rim rounded-xl p-6 mb-4">
+        <h2 className="text-[11px] text-muted uppercase tracking-widest mb-5 font-medium">Most Popular Colors</h2>
+        {!data?.popularVariants?.length ? (
+          <p className="text-dim text-sm">No color interactions yet</p>
+        ) : (
+          <div className="space-y-3">
+            {data.popularVariants.map((v, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <span className="text-dim text-xs tabular-nums w-5 text-right">{i + 1}</span>
+                <div
+                  className="w-6 h-6 rounded-full shrink-0"
+                  style={{ background: v._id, border: '1px solid rgba(255,255,255,0.1)' }}
+                />
+                <span className="text-muted text-sm flex-1 font-mono text-xs">{v._id}</span>
+                <span className="text-glow font-semibold text-sm tabular-nums">
+                  {v.count}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Daily Views */}
+      <div className="bg-surface border border-rim rounded-xl p-6">
+        <h2 className="text-[11px] text-muted uppercase tracking-widest mb-5 font-medium">Last 7 Days</h2>
+        {!data?.dailyViews?.length ? (
+          <p className="text-dim text-sm">No views in the last 7 days</p>
+        ) : (
+          <div className="space-y-3">
+            {data.dailyViews.map((day, i) => {
+              const pct = Math.min((day.count / maxViews) * 100, 100);
+              return (
                 <div key={i} className="flex items-center gap-4">
-                  <span className="text-gray-400 text-sm w-24">{day._id}</span>
-                  <div className="flex-1 bg-gray-800 rounded-full h-3 overflow-hidden">
+                  <span className="text-muted text-xs w-20 shrink-0">{day._id}</span>
+                  <div className="flex-1 bg-elevated rounded-full h-2 overflow-hidden">
                     <div
-                      className="bg-indigo-500 h-full rounded-full transition-all"
-                      style={{
-                        width: `${Math.min(
-                          (day.count / Math.max(...data.dailyViews.map(d => d.count))) * 100,
-                          100
-                        )}%`
-                      }}
+                      className="bg-volt h-full rounded-full transition-all"
+                      style={{ width: `${pct}%` }}
                     />
                   </div>
-                  <span className="text-indigo-400 font-semibold text-sm w-8">
+                  <span className="text-glow font-semibold text-sm tabular-nums w-8 text-right">
                     {day.count}
                   </span>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

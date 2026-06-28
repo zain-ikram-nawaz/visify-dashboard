@@ -5,6 +5,13 @@ import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import api from '../../../../../../lib/api';
 
+const ENVS = ['studio', 'outdoor', 'showroom', 'dark'];
+
+const inputClass =
+  'w-full bg-elevated border border-rim rounded-lg px-4 py-3 text-snow placeholder:text-dim focus:outline-none focus:border-volt transition-colors text-sm';
+
+const labelClass = 'block text-[11px] text-muted uppercase tracking-widest mb-2 font-medium';
+
 export default function NewConfiguratorPage() {
   const router = useRouter();
   const [uploading, setUploading] = useState(false);
@@ -20,6 +27,8 @@ export default function NewConfiguratorPage() {
     environmentLight: 'studio',
   });
 
+  const set = (key, val) => setForm((prev) => ({ ...prev, [key]: val }));
+
   const handleModelUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -34,8 +43,8 @@ export default function NewConfiguratorPage() {
       const res = await api.post('/upload/model', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      setForm(prev => ({ ...prev, baseModelUrl: res.data.modelUrl }));
-      toast.success('Base model uploaded!');
+      set('baseModelUrl', res.data.modelUrl);
+      toast.success('Model uploaded');
     } catch (err) {
       toast.error('Upload failed');
     } finally {
@@ -52,7 +61,7 @@ export default function NewConfiguratorPage() {
     setLoading(true);
     try {
       const res = await api.post('/configurator/products', form);
-      toast.success('Configurator created!');
+      toast.success('Configurator created');
       router.push(`/dashboard/configurator/${res.data.product._id}`);
     } catch (err) {
       toast.error('Failed to create configurator');
@@ -62,65 +71,84 @@ export default function NewConfiguratorPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
-      <nav className="border-b border-gray-800 bg-gray-900 px-6 py-4 flex items-center gap-4">
-        <button onClick={() => router.push('/dashboard/configurator')} className="text-gray-400 hover:text-white">← Back</button>
-        <h1 className="text-xl font-bold">VI<span className="text-indigo-500">SI</span>FY</h1>
-      </nav>
+    <div className="p-8 max-w-2xl">
 
-      <div className="max-w-2xl mx-auto p-6">
-        <h2 className="text-2xl font-bold mb-2">New Configurator</h2>
-        <p className="text-gray-400 mb-8">Start by setting up your base product and 3D model</p>
+      {/* Header */}
+      <div className="mb-8">
+        <button
+          onClick={() => router.push('/dashboard/configurator')}
+          className="text-muted hover:text-snow text-sm mb-4 flex items-center gap-1.5 transition-colors"
+        >
+          ← Back
+        </button>
+        <h1 className="text-2xl font-bold text-snow tracking-tight">New Configurator</h1>
+        <p className="text-muted text-sm mt-1">Set up your base product and 3D model</p>
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit}>
+        <div className="bg-surface border border-rim rounded-xl overflow-hidden mb-4">
 
           {/* Name */}
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-            <label className="block text-sm text-gray-400 mb-2">Configurator Name</label>
+          <div className="p-5 border-b border-rim">
+            <label className={labelClass}>Configurator Name</label>
             <input
               type="text"
               value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              onChange={(e) => set('name', e.target.value)}
               placeholder="e.g. Van Builder, Chair Studio"
               required
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
+              className={inputClass}
             />
           </div>
 
           {/* Description */}
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-            <label className="block text-sm text-gray-400 mb-2">Description <span className="text-gray-600">(optional)</span></label>
+          <div className="p-5 border-b border-rim">
+            <label className={labelClass}>
+              Description <span className="text-dim normal-case tracking-normal">— optional</span>
+            </label>
             <textarea
               value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              onChange={(e) => set('description', e.target.value)}
               placeholder="Short description of this configurator"
               rows={3}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 resize-none"
+              className={`${inputClass} resize-none`}
             />
           </div>
 
           {/* Base Model Upload */}
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-            <label className="block text-sm text-gray-400 mb-2">Base 3D Model <span className="text-gray-600">(.glb or .gltf)</span></label>
+          <div className="p-5 border-b border-rim">
+            <label className={labelClass}>Base 3D Model <span className="text-dim normal-case tracking-normal">— .glb or .gltf</span></label>
             {form.baseModelUrl ? (
-              <div className="flex items-center gap-3 bg-green-900/30 border border-green-700 rounded-lg px-4 py-3">
-                <span className="text-green-400">✓</span>
-                <span className="text-green-400 text-sm">Base model uploaded</span>
-                <button type="button" onClick={() => setForm({ ...form, baseModelUrl: '' })} className="ml-auto text-gray-500 hover:text-white text-sm">Remove</button>
+              <div className="flex items-center gap-3 bg-ok/5 border border-ok/20 rounded-lg px-4 py-3">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34D399" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span className="text-ok text-sm flex-1">Base model uploaded</span>
+                <button
+                  type="button"
+                  onClick={() => set('baseModelUrl', '')}
+                  className="text-muted hover:text-snow text-xs transition-colors"
+                >
+                  Remove
+                </button>
               </div>
             ) : (
               <label className="block cursor-pointer">
-                <div className={`border-2 border-dashed rounded-xl p-8 text-center transition ${uploading ? 'border-indigo-500 bg-indigo-900/20' : 'border-gray-700 hover:border-indigo-500'}`}>
+                <div className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
+                  uploading ? 'border-volt bg-volt/5' : 'border-rim hover:border-volt/50'
+                }`}>
                   {uploading ? (
                     <>
-                      <div className="w-8 h-8 border-4 border-gray-700 border-t-indigo-500 rounded-full animate-spin mx-auto mb-3"></div>
-                      <p className="text-gray-400 text-sm">Uploading...</p>
+                      <div className="vspin mx-auto mb-3" />
+                      <p className="text-muted text-sm">Uploading...</p>
                     </>
                   ) : (
                     <>
-                      <p className="text-4xl mb-3">📦</p>
-                      <p className="text-gray-300 font-medium mb-1">Upload Base Model</p>
-                      <p className="text-gray-500 text-sm">This is the main product — parts will be added on top</p>
+                      <div className="w-10 h-10 bg-volt/10 rounded-xl flex items-center justify-center mx-auto mb-3">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7B5CF5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                      </div>
+                      <p className="text-snow text-sm font-medium mb-1">Upload Base Model</p>
+                      <p className="text-muted text-xs">The main product — parts will be layered on top</p>
                     </>
                   )}
                 </div>
@@ -130,47 +158,46 @@ export default function NewConfiguratorPage() {
           </div>
 
           {/* Base Price */}
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-            <label className="block text-sm text-gray-400 mb-2">Base Price ($)</label>
+          <div className="p-5 border-b border-rim">
+            <label className={labelClass}>Base Price ($)</label>
             <input
               type="number"
               value={form.basePrice}
-              onChange={(e) => setForm({ ...form, basePrice: parseFloat(e.target.value) || 0 })}
+              onChange={(e) => set('basePrice', parseFloat(e.target.value) || 0)}
               placeholder="0"
               min="0"
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
+              className={inputClass}
             />
           </div>
 
           {/* Shopify Handle */}
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-            <label className="block text-sm text-gray-400 mb-2">
-              Shopify Product Handle
-              <span className="text-gray-600 ml-2">(optional)</span>
+          <div className="p-5 border-b border-rim">
+            <label className={labelClass}>
+              Shopify Handle <span className="text-dim normal-case tracking-normal">— optional</span>
             </label>
             <input
               type="text"
               value={form.shopifyHandle}
-              onChange={(e) => setForm({ ...form, shopifyHandle: e.target.value })}
+              onChange={(e) => set('shopifyHandle', e.target.value)}
               placeholder="e.g. custom-van-builder"
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
+              className={inputClass}
             />
-            <p className="text-gray-600 text-xs mt-2">Shopify Admin → Products → your product → Search engine listing → Handle</p>
+            <p className="text-dim text-xs mt-2">Shopify Admin → Products → your product → Search engine listing → Handle</p>
           </div>
 
-          {/* Environment */}
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-            <label className="block text-sm text-gray-400 mb-3">Environment Lighting</label>
+          {/* Environment Lighting */}
+          <div className="p-5">
+            <label className={labelClass}>Environment Lighting</label>
             <div className="grid grid-cols-4 gap-2">
-              {['studio', 'outdoor', 'showroom', 'dark'].map((env) => (
+              {ENVS.map((env) => (
                 <button
                   key={env}
                   type="button"
-                  onClick={() => setForm({ ...form, environmentLight: env })}
-                  className={`py-2 rounded-lg text-sm font-medium capitalize transition ${
+                  onClick={() => set('environmentLight', env)}
+                  className={`py-2.5 rounded-lg text-xs font-medium capitalize transition-colors ${
                     form.environmentLight === env
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                      ? 'bg-volt text-white'
+                      : 'bg-elevated text-muted hover:text-snow border border-rim'
                   }`}
                 >
                   {env}
@@ -178,17 +205,16 @@ export default function NewConfiguratorPage() {
               ))}
             </div>
           </div>
+        </div>
 
-          <button
-            type="submit"
-            disabled={loading || uploading}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white py-4 rounded-xl font-semibold text-lg"
-          >
-            {loading ? 'Creating...' : 'Create & Add Parts →'}
-          </button>
-
-        </form>
-      </div>
+        <button
+          type="submit"
+          disabled={loading || uploading}
+          className="w-full bg-volt hover:bg-volt/90 disabled:opacity-40 text-white py-3.5 rounded-xl font-semibold text-sm transition-colors"
+        >
+          {loading ? 'Creating...' : 'Create & Add Parts →'}
+        </button>
+      </form>
     </div>
   );
 }

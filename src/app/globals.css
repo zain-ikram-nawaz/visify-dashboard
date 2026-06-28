@@ -1,13 +1,133 @@
 @import "tailwindcss";
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+@theme {
+  --color-void: #06060C;
+  --color-surface: #0E0E1A;
+  --color-elevated: #161625;
+  --color-rim: #22223A;
+  --color-volt: #7B5CF5;
+  --color-glow: #A78BFA;
+  --color-snow: #E4E4F0;
+  --color-muted: #6B6B85;
+  --color-dim: #3A3A52;
+  --color-ok: #34D399;
+  --color-warn: #FBBF24;
+  --color-bad: #F87171;
+
+  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
 }
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: #f9fafb;
-  color: #111827;
+/* Base resets placed inside @layer base so Tailwind utility classes (in @layer utilities)
+   can override them — unlayered CSS beats all layered CSS in the cascade. */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html { height: 100%; }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: #06060C;
+    color: #E4E4F0;
+    min-height: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Signature hover effect — volt glow on interactive cards */
+.glow-card {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+.glow-card:hover {
+  border-color: rgba(123, 92, 245, 0.45) !important;
+  background-color: #161625;
+  box-shadow: 0 0 0 1px rgba(123, 92, 245, 0.08), 0 8px 32px rgba(123, 92, 245, 0.07);
+}
+
+/* Loading spinner */
+@keyframes vspin {
+  to { transform: rotate(360deg); }
+}
+.vspin {
+  width: 32px;
+  height: 32px;
+  border: 2.5px solid #22223A;
+  border-top-color: #7B5CF5;
+  border-radius: 50%;
+  animation: vspin 0.7s linear infinite;
+}
+
+/* ─── Explicit color utilities ───────────────────────────────────────────────
+   Tailwind v4 @theme tokens sometimes don't generate CSS classes in all setups.
+   These definitions guarantee the classes always work regardless.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* Backgrounds */
+.bg-void     { background-color: #06060C; }
+.bg-surface  { background-color: #0E0E1A; }
+.bg-elevated { background-color: #161625; }
+.bg-volt     { background-color: #7B5CF5; }
+.bg-glow     { background-color: #A78BFA; }
+.bg-ok       { background-color: #34D399; }
+.bg-bad      { background-color: #F87171; }
+.bg-warn     { background-color: #FBBF24; }
+
+/* Text */
+.text-volt  { color: #7B5CF5; }
+.text-glow  { color: #A78BFA; }
+.text-snow  { color: #E4E4F0; }
+.text-muted { color: #6B6B85; }
+.text-dim   { color: #3A3A52; }
+.text-ok    { color: #34D399; }
+.text-bad   { color: #F87171; }
+.text-warn  { color: #FBBF24; }
+
+/* Borders */
+.border-rim  { border-color: #22223A; }
+.border-volt { border-color: #7B5CF5; }
+.border-ok   { border-color: #34D399; }
+.border-bad  { border-color: #F87171; }
+
+/* Background opacity variants */
+.bg-volt\/10 { background-color: rgba(123, 92, 245, 0.10); }
+.bg-volt\/5  { background-color: rgba(123, 92, 245, 0.05); }
+.bg-ok\/10   { background-color: rgba(52,  211, 153, 0.10); }
+.bg-ok\/5    { background-color: rgba(52,  211, 153, 0.05); }
+.bg-bad\/10  { background-color: rgba(248, 113, 113, 0.10); }
+.bg-warn\/10 { background-color: rgba(251, 191,  36, 0.10); }
+
+/* Border opacity variants */
+.border-ok\/20   { border-color: rgba(52,  211, 153, 0.20); }
+.border-volt\/50 { border-color: rgba(123,  92, 245, 0.50); }
+
+/* Hover states */
+.hover\:bg-volt\/90:hover          { background-color: rgba(123, 92,  245, 0.90); }
+.hover\:bg-bad\/\[0\.08\]:hover    { background-color: rgba(248, 113, 113, 0.08); }
+.hover\:bg-white\/\[0\.04\]:hover  { background-color: rgba(255, 255, 255, 0.04); }
+.hover\:text-bad:hover             { color: #F87171; }
+.hover\:text-snow:hover            { color: #E4E4F0; }
+.hover\:text-volt:hover            { color: #7B5CF5; }
+.hover\:text-glow:hover            { color: #A78BFA; }
+.hover\:border-muted:hover         { border-color: #6B6B85; }
+.hover\:border-bad\/50:hover       { border-color: rgba(248, 113, 113, 0.50); }
+.hover\:border-volt\/50:hover      { border-color: rgba(123,  92, 245, 0.50); }
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+
+/* Thin scrollbars */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #22223A; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #3A3A52; }
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid rgba(123, 92, 245, 0.5);
+  outline-offset: 2px;
 }

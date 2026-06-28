@@ -13,27 +13,26 @@ export default function ProductPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [productRes, brandRes] = await Promise.all([
+          api.get(`/products/${id}`),
+          api.get('/auth/me'),
+        ]);
+        setProduct(productRes.data.product);
+        setBrand(brandRes.data.brand);
+      } catch (err) {
+        toast.error('Product not found');
+        router.push('/dashboard');
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchData();
   }, []);
 
-  const fetchData = async () => {
-    try {
-      const [productRes, brandRes] = await Promise.all([
-        api.get(`/products/${id}`),
-        api.get('/auth/me'),
-      ]);
-      setProduct(productRes.data.product);
-      setBrand(brandRes.data.brand);
-    } catch (err) {
-      toast.error('Product not found');
-      router.push('/dashboard');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
+    if (!confirm('Delete this product?')) return;
     try {
       await api.delete(`/products/${id}`);
       toast.success('Product deleted');
@@ -43,119 +42,112 @@ export default function ProductPage() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="vspin" />
+      </div>
+    );
+  }
+
   const embedCode = `<!-- Visify 3D Configurator -->
 <div id="visify-configurator"></div>
 <script
-  src="http://localhost:5173/src/index.js"
+  src="https://viewer.visify.io/src/index.js"
   data-api-key="${brand?.apiKey}"
   data-product-id="${id}"
   type="module">
 </script>`;
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-gray-700 border-t-indigo-500 rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="p-8 max-w-2xl">
 
-      {/* Navbar */}
-      <nav className="border-b border-gray-800 bg-gray-900 px-6 py-4 flex items-center gap-4">
+      {/* Header */}
+      <div className="mb-8">
         <button
           onClick={() => router.push('/dashboard')}
-          className="text-gray-400 hover:text-white transition"
+          className="text-muted hover:text-snow text-sm mb-4 flex items-center gap-1.5 transition-colors"
         >
-          ← Back
+          ← Overview
         </button>
-        <h1 className="text-xl font-bold">
-          VI<span className="text-indigo-500">SI</span>FY
-        </h1>
-      </nav>
-
-      <div className="max-w-2xl mx-auto p-6">
-
-        {/* Product Header */}
-        <div className="flex items-start justify-between mb-8">
+        <div className="flex items-start justify-between">
           <div>
-            <h2 className="text-2xl font-bold">{product?.name}</h2>
-            <span className={`text-xs px-2 py-1 rounded-full mt-2 inline-block
-              ${product?.isActive ? 'bg-green-900 text-green-400' : 'bg-red-900 text-red-400'}`}>
+            <h1 className="text-2xl font-bold text-snow tracking-tight">{product?.name}</h1>
+            <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium mt-2 ${
+              product?.isActive ? 'bg-ok/10 text-ok' : 'bg-bad/10 text-bad'
+            }`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${product?.isActive ? 'bg-ok' : 'bg-bad'}`} />
               {product?.isActive ? 'Active' : 'Inactive'}
             </span>
           </div>
           <button
             onClick={handleDelete}
-            className="text-sm text-red-400 hover:text-red-300 border border-red-900 hover:border-red-700 px-4 py-2 rounded-lg transition"
+            className="text-sm text-muted hover:text-bad border border-rim hover:border-bad/40 px-4 py-2 rounded-lg transition-colors"
           >
             Delete
           </button>
         </div>
+      </div>
 
-        {/* Variants */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-6">
-          <p className="text-gray-400 text-sm mb-4">Color Variants</p>
+      <div className="space-y-4">
+
+        {/* Color Variants */}
+        <div className="bg-surface border border-rim rounded-xl p-5">
+          <p className="text-[11px] text-muted uppercase tracking-widest mb-4 font-medium">Color Variants</p>
           <div className="flex gap-3 flex-wrap">
             {product?.variants.map((v) => (
               <div key={v._id} className="flex items-center gap-2">
                 <div
-                  className="w-8 h-8 rounded-full border-2 border-gray-700"
-                  style={{ background: v.color }}
+                  className="w-8 h-8 rounded-full shrink-0"
+                  style={{ background: v.color, border: '2px solid rgba(255,255,255,0.1)' }}
                 />
-                <span className="text-sm text-gray-300">{v.label}</span>
+                <span className="text-sm text-muted">{v.label}</span>
               </div>
             ))}
           </div>
         </div>
 
         {/* Materials */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-6">
-          <p className="text-gray-400 text-sm mb-4">Materials</p>
-          <div className="flex gap-2 flex-wrap">
-            {product?.materials.map((m, i) => (
-              <span
-                key={i}
-                className="bg-gray-800 text-gray-300 text-sm px-3 py-1 rounded-full"
-              >
-                {m}
-              </span>
-            ))}
+        {product?.materials?.length > 0 && (
+          <div className="bg-surface border border-rim rounded-xl p-5">
+            <p className="text-[11px] text-muted uppercase tracking-widest mb-4 font-medium">Materials</p>
+            <div className="flex gap-2 flex-wrap">
+              {product.materials.map((m, i) => (
+                <span
+                  key={i}
+                  className="bg-elevated border border-rim text-muted text-sm px-3 py-1 rounded-full capitalize"
+                >
+                  {m}
+                </span>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Embed Code */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-6">
+        <div className="bg-surface border border-rim rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
-            <p className="text-gray-400 text-sm">Embed Code</p>
+            <p className="text-[11px] text-muted uppercase tracking-widest font-medium">Embed Code</p>
             <button
-              onClick={() => {
-                navigator.clipboard.writeText(embedCode);
-                toast.success('Embed code copied!');
-              }}
-              className="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg text-sm font-medium transition"
+              onClick={() => { navigator.clipboard.writeText(embedCode); toast.success('Embed code copied'); }}
+              className="bg-volt hover:bg-volt/90 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors"
             >
               Copy Code
             </button>
           </div>
-          <pre className="bg-gray-800 rounded-lg p-4 text-xs text-gray-300 overflow-x-auto whitespace-pre-wrap">
+          <pre className="bg-elevated rounded-lg p-4 text-xs text-muted font-mono overflow-x-auto whitespace-pre">
             {embedCode}
           </pre>
-          <p className="text-gray-600 text-xs mt-3">
-            Paste this code in your product page HTML where you want the 3D configurator to appear.
+          <p className="text-dim text-xs mt-3">
+            Paste this into your Shopify product page theme where you want the 3D configurator to appear.
           </p>
         </div>
 
         {/* Model URL */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-          <p className="text-gray-400 text-sm mb-2">3D Model URL</p>
-          <code className="text-indigo-400 text-xs break-all">
-            {product?.modelUrl}
-          </code>
+        <div className="bg-surface border border-rim rounded-xl p-5">
+          <p className="text-[11px] text-muted uppercase tracking-widest mb-3 font-medium">3D Model URL</p>
+          <code className="text-glow text-xs break-all font-mono">{product?.modelUrl}</code>
         </div>
-
       </div>
     </div>
   );

@@ -45,16 +45,20 @@ function IconCode() {
 export default function ConfiguratorBuilderPage() {
   const router = useRouter();
   const { id } = useParams();
+  const previewRef = useRef(null);
+  const viewerInjectedRef = useRef(false);
 
   const [product, setProduct] = useState(null);
   const [brand, setBrand] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [viewerReady, setViewerReady] = useState(false);
 
   const [activeTab, setActiveTab] = useState('parts');
 
   const [showAddPart, setShowAddPart] = useState(false);
   const [showAddVariant, setShowAddVariant] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadingTexture, setUploadingTexture] = useState(false);
 
   const [partForm, setPartForm] = useState({
     name: '', description: '', modelUrl: '', category: 'general',
@@ -64,7 +68,39 @@ export default function ConfiguratorBuilderPage() {
     label: '', type: 'color', value: '#ffffff', priceModifier: 0,
   });
 
+  const [syncingPrice, setSyncingPrice] = useState(false);
+
   useEffect(() => { fetchProduct(); }, []);
+
+  useEffect(() => {
+    if (!product || !brand || !previewRef.current || viewerInjectedRef.current) return;
+
+    viewerInjectedRef.current = true;
+
+    const viewerBaseUrl = (process.env.NEXT_PUBLIC_VIEWER_URL || 'http://localhost:5173').replace(/\/$/, '');
+    const viewerScriptPath =
+      viewerBaseUrl.includes('localhost') || viewerBaseUrl.includes('127.0.0.1')
+        ? '/src/index.js'
+        : '/embed.iife.js';
+
+    window.VISIFY_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+    window.VISIFY_API_KEY = brand.apiKey;
+    window.VISIFY_SHOP_DOMAIN = brand.shopDomain || '';
+    window.VISIFY_PRODUCT_ID = product.shopifyHandle || id;
+    window.VISIFY_CONFIGURATOR_ID = id;
+
+    const script = document.createElement('script');
+    script.src = `${viewerBaseUrl}${viewerScriptPath}`;
+    script.type = 'module';
+    script.onload = () => setViewerReady(true);
+    script.onerror = () => setViewerReady(false);
+    document.body.appendChild(script);
+
+    return () => {
+      script.remove();
+      viewerInjectedRef.current = false;
+    };
+  }, [product, brand, id]);
 
   const fetchProduct = async () => {
     try {
@@ -100,6 +136,23 @@ export default function ConfiguratorBuilderPage() {
       toast.error('Upload failed');
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleVariantTextureUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploadingTexture(true);
+    try {
+      const formData = new FormData();
+      formData.append('texture', file);
+      const res = await api.post('/upload/texture', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      setVariantForm((prev) => ({ ...prev, value: res.data.textureUrl }));
+      toast.success('Texture uploaded');
+    } catch {
+      toast.error('Upload failed');
+    } finally {
+      setUploadingTexture(false);
     }
   };
 
@@ -143,6 +196,19 @@ export default function ConfiguratorBuilderPage() {
     } catch { toast.error('Failed to delete variant'); }
   };
 
+  const handleSyncPrice = async () => {
+    setSyncingPrice(true);
+    try {
+      await api.post(`/configurator/products/${id}/sync-price`);
+      toast.success('Price synced from Shopify');
+      fetchProduct();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to sync price');
+    } finally {
+      setSyncingPrice(false);
+    }
+  };
+
   const handlePublishToggle = async () => {
     try {
       await api.put(`/configurator/products/${id}`, { isPublished: !product.isPublished });
@@ -159,7 +225,7 @@ export default function ConfiguratorBuilderPage() {
     );
   }
 
-  const embedCode = `<div id="visify-configurator"></div>\n<script>\n  window.VISIFY_API_KEY = '${brand?.apiKey || '...'}' ;\n  window.VISIFY_PRODUCT_ID = '{{ product.handle }}';\n<\/script>\n<script type="module" src="${process.env.NEXT_PUBLIC_VIEWER_URL || 'https://viewer.visify.io'}/src/index.js"><\/script>`;
+  const embedCode = `<div id="visify-configurator"></div>\n<script>\n  window.VISIFY_API_KEY = '${brand?.apiKey || '...'}' ;\n  window.VISIFY_PRODUCT_ID = '{{ product.handle }}';\n<\/script>\n<script type="module" src="${process.env.NEXT_PUBLIC_VIEWER_URL || 'http://localhost:5173'}/src/index.js"><\/script>`;
 
   const tabs = ['parts', 'embed'];
 
@@ -196,14 +262,15 @@ export default function ConfiguratorBuilderPage() {
 
           {/* Viewer mount */}
           <div
-            id="visify-preview"
+            id="visify-configurator"
+            ref={previewRef}
             className="w-full h-full"
             data-api-key={brand?.apiKey}
             data-product-id={id}
           />
 
           {/* Placeholder when no viewer loaded */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+          <div className={`absolute inset-0 flex flex-col items-center justify-center pointer-events-none transition-opacity duration-300 ${viewerReady ? 'opacity-0' : 'opacity-100'}`}>
             <div className="w-20 h-20 rounded-2xl bg-surface border border-rim flex items-center justify-center mb-5 opacity-40">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#7B5CF5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
@@ -314,6 +381,8 @@ export default function ConfiguratorBuilderPage() {
                     onDeleteVariant={handleDeleteVariant}
                     inputClass={inputClass}
                     labelClass={labelClass}
+                    uploadingTexture={uploadingTexture}
+                    onVariantTextureUpload={handleVariantTextureUpload}
                   />
                 ))
               )}
@@ -323,6 +392,29 @@ export default function ConfiguratorBuilderPage() {
           {/* ── Embed tab ── */}
           {activeTab === 'embed' && (
             <div className="p-5 space-y-4">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className={labelClass}>Base Price</p>
+                  {product.shopifyHandle && (
+                    <button
+                      onClick={handleSyncPrice}
+                      disabled={syncingPrice}
+                      className="text-[11px] text-volt hover:text-glow disabled:opacity-40 transition-colors"
+                    >
+                      {syncingPrice ? 'Syncing...' : 'Re-sync from Shopify'}
+                    </button>
+                  )}
+                </div>
+                <div className="bg-elevated border border-rim rounded-lg px-4 py-3">
+                  <span className="text-snow text-sm font-semibold">${(product.basePrice || 0).toFixed(2)}</span>
+                  <p className="text-dim text-xs mt-1">
+                    {product.shopifyHandle
+                      ? 'Synced from this product’s real Shopify price — updates automatically when it changes in Shopify admin.'
+                      : 'Set a Shopify Handle below to auto-sync this from the real product price.'}
+                  </p>
+                </div>
+              </div>
+
               <div>
                 <p className={labelClass}>Base Model</p>
                 <div className="flex items-center gap-3 bg-elevated border border-rim rounded-lg px-4 py-3">
@@ -480,7 +572,8 @@ export default function ConfiguratorBuilderPage() {
 
 /* ── Part Card ────────────────────────────────────────────────────────────── */
 function PartCard({ part, showAddVariant, setShowAddVariant, variantForm, setVariantForm,
-  onDeletePart, onAddVariant, onDeleteVariant, inputClass, labelClass }) {
+  onDeletePart, onAddVariant, onDeleteVariant, inputClass, labelClass,
+  uploadingTexture, onVariantTextureUpload }) {
   return (
     <div className="bg-elevated border border-rim rounded-xl overflow-hidden">
 
@@ -530,9 +623,12 @@ function PartCard({ part, showAddVariant, setShowAddVariant, variantForm, setVar
             {part.variants.map((v) => (
               <div key={v._id}
                 className="flex items-center gap-1.5 bg-surface border border-rim rounded-md px-2 py-1">
-                {v.type === 'color' && (
+                {v.type === 'color' ? (
                   <div className="w-3 h-3 rounded-full shrink-0"
                     style={{ background: v.value, border: '1px solid rgba(255,255,255,0.12)' }} />
+                ) : (
+                  <div className="w-3 h-3 rounded-full shrink-0 bg-cover bg-center"
+                    style={{ backgroundImage: `url(${v.value})`, border: '1px solid rgba(255,255,255,0.12)' }} />
                 )}
                 <span className="text-[11px] text-muted">{v.label}</span>
                 {v.priceModifier !== 0 && (
@@ -554,10 +650,14 @@ function PartCard({ part, showAddVariant, setShowAddVariant, variantForm, setVar
                 onChange={(e) => setVariantForm({ ...variantForm, label: e.target.value })}
                 placeholder="Label e.g. Red, Oak" required className={inputClass} />
               <select value={variantForm.type}
-                onChange={(e) => setVariantForm({ ...variantForm, type: e.target.value })}
+                onChange={(e) => setVariantForm({
+                  ...variantForm,
+                  type: e.target.value,
+                  value: e.target.value === 'color' ? '#ffffff' : '',
+                })}
                 className={`${inputClass} cursor-pointer`}>
                 <option value="color">Color</option>
-                <option value="texture">Texture URL</option>
+                <option value="texture">Texture Image</option>
               </select>
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -568,10 +668,28 @@ function PartCard({ part, showAddVariant, setShowAddVariant, variantForm, setVar
                     className="w-6 h-6 rounded cursor-pointer bg-transparent border-0 p-0" />
                   <span className="text-xs text-muted font-mono">{variantForm.value}</span>
                 </div>
+              ) : variantForm.value ? (
+                <div className="flex items-center gap-2 bg-elevated border border-rim rounded-lg px-3 py-2">
+                  <div className="w-6 h-6 rounded shrink-0 bg-cover bg-center"
+                    style={{ backgroundImage: `url(${variantForm.value})` }} />
+                  <span className="text-xs text-muted flex-1 truncate">Image uploaded</span>
+                  <button type="button" onClick={() => setVariantForm({ ...variantForm, value: '' })}
+                    className="text-dim hover:text-bad text-xs shrink-0 transition-colors">Remove</button>
+                </div>
               ) : (
-                <input type="text" value={variantForm.value}
-                  onChange={(e) => setVariantForm({ ...variantForm, value: e.target.value })}
-                  placeholder="Texture URL" className={inputClass} />
+                <label className="block cursor-pointer">
+                  <div className={`border border-dashed rounded-lg px-3 py-2.5 text-center transition-colors ${
+                    uploadingTexture ? 'border-volt bg-volt/5' : 'border-rim hover:border-volt/40'
+                  }`}>
+                    {uploadingTexture ? (
+                      <div className="vspin mx-auto" style={{ width: 14, height: 14 }} />
+                    ) : (
+                      <span className="text-dim text-xs">Upload texture image</span>
+                    )}
+                  </div>
+                  <input type="file" accept="image/*" onChange={onVariantTextureUpload}
+                    className="hidden" disabled={uploadingTexture} />
+                </label>
               )}
               <input type="number" value={variantForm.priceModifier}
                 onChange={(e) => setVariantForm({ ...variantForm, priceModifier: parseFloat(e.target.value) || 0 })}

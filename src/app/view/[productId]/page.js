@@ -54,12 +54,8 @@ export default function ViewerPage() {
 
   /* Fetch product via public API */
   useEffect(() => {
-    if (!productId || !apiKey) {
-      setError('Missing product ID or API key.');
-      setLoading(false);
-      return;
-    }
-    const base = process.env.NEXT_PUBLIC_API_URL || 'https://api.visify.io';
+    if (!productId || !apiKey) return;
+    const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
     fetch(`${base}/public/products/${productId}`, {
       headers: { 'X-API-Key': apiKey },
     })
@@ -85,16 +81,30 @@ export default function ViewerPage() {
     if (!product || scriptInjected.current || !viewerRef.current) return;
     scriptInjected.current = true;
 
+    const viewerBaseUrl = (process.env.NEXT_PUBLIC_VIEWER_URL || 'http://localhost:5173').replace(/\/$/, '');
+    const viewerScriptPath =
+      viewerBaseUrl.includes('localhost') || viewerBaseUrl.includes('127.0.0.1')
+        ? '/src/index.js'
+        : '/embed.iife.js';
+
     const el = viewerRef.current;
     el.setAttribute('data-api-key', apiKey);
     el.setAttribute('data-product-id', productId);
 
+    // The viewer script reads these globals (not the data-* attributes above)
+    // to decide which product to fetch — must be set before it loads.
+    window.VISIFY_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+    window.VISIFY_API_KEY = apiKey;
+    window.VISIFY_SHOP_DOMAIN = product.shopDomain || '';
+    window.VISIFY_PRODUCT_ID = product.shopifyHandle || productId;
+    window.VISIFY_CONFIGURATOR_ID = productId;
+
     const script = document.createElement('script');
-    script.src = `${process.env.NEXT_PUBLIC_VIEWER_URL || 'https://viewer.visify.io'}/src/index.js`;
+    script.src = `${viewerBaseUrl}${viewerScriptPath}`;
     script.type = 'module';
     script.onload = () => setViewerReady(true);
     document.body.appendChild(script);
-  }, [product]);
+  }, [product, apiKey, productId]);
 
   /* Calculated price */
   const total = (() => {
@@ -120,8 +130,10 @@ export default function ViewerPage() {
   }, []);
 
   /* ── Screens ── */
-  if (loading) return <LoadingScreen />;
-  if (error) return <ErrorScreen message={error} />;
+  const missingParams = !productId || !apiKey;
+  const displayError = error || (missingParams ? 'Missing product ID or API key.' : null);
+  if (loading && !missingParams) return <LoadingScreen />;
+  if (displayError) return <ErrorScreen message={displayError} />;
   if (!product) return null;
 
   const steps = buildSteps(product);

@@ -24,7 +24,7 @@ export default function DashboardPage() {
       try {
         const [brandRes, productsRes] = await Promise.all([
           api.get('/auth/me'),
-          api.get('/products'),
+          api.get('/configurator/products'),
         ]);
         setBrand(brandRes.data.brand);
         setProducts(productsRes.data.products);
@@ -56,17 +56,17 @@ export default function DashboardPage() {
           <p className="text-muted text-sm mt-1">Welcome back, {brand?.name}</p>
         </div>
         <button
-          onClick={() => router.push('/dashboard/products/new')}
+          onClick={() => router.push('/dashboard/configurator/new')}
           className="bg-volt hover:bg-volt/90 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors"
         >
-          + Add Product
+          + New Configurator
         </button>
       </div>
 
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="bg-surface border border-rim rounded-xl p-5">
-          <p className="text-[11px] text-muted uppercase tracking-widest mb-3 font-medium">Total Products</p>
+          <p className="text-[11px] text-muted uppercase tracking-widest mb-3 font-medium">Total Configurators</p>
           <p className="text-4xl font-bold text-snow tabular-nums">{products.length}</p>
         </div>
         <div className="bg-surface border border-rim rounded-xl p-5">
@@ -105,10 +105,10 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Products section */}
+      {/* Configurators section */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-[15px] font-semibold text-snow">
-          Products
+          Configurators
           <span className="text-muted font-normal ml-2 text-sm">{products.length}</span>
         </h2>
       </div>
@@ -118,13 +118,13 @@ export default function DashboardPage() {
           <div className="w-10 h-10 bg-volt/10 rounded-xl flex items-center justify-center mx-auto mb-4">
             <CubeIcon />
           </div>
-          <p className="text-snow font-semibold mb-1">No products yet</p>
-          <p className="text-muted text-sm mb-5">Upload your first 3D model to get started</p>
+          <p className="text-snow font-semibold mb-1">No configurators yet</p>
+          <p className="text-muted text-sm mb-5">Build your first 3D configurator to get started</p>
           <button
-            onClick={() => router.push('/dashboard/products/new')}
+            onClick={() => router.push('/dashboard/configurator/new')}
             className="bg-volt hover:bg-volt/90 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors"
           >
-            Add first product
+            Create first configurator
           </button>
         </div>
       ) : (
@@ -133,32 +133,19 @@ export default function DashboardPage() {
             <div
               key={product._id}
               className="bg-surface border border-rim rounded-xl p-5 glow-card cursor-pointer"
-              onClick={() => router.push(`/dashboard/products/${product._id}`)}
+              onClick={() => router.push(`/dashboard/configurator/${product._id}`)}
             >
               <div className="flex items-start justify-between mb-3">
                 <h3 className="font-semibold text-snow text-[14px] leading-snug">{product.name}</h3>
                 <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ml-2 shrink-0 ${
-                  product.isActive ? 'bg-ok/10 text-ok' : 'bg-bad/10 text-bad'
+                  product.isPublished ? 'bg-ok/10 text-ok' : 'bg-warn/10 text-warn'
                 }`}>
-                  {product.isActive ? 'Active' : 'Inactive'}
+                  {product.isPublished ? 'Published' : 'Draft'}
                 </span>
               </div>
 
-              {product.variants?.length > 0 && (
-                <div className="flex gap-1.5 mb-3 flex-wrap">
-                  {product.variants.slice(0, 10).map((v) => (
-                    <div
-                      key={v._id}
-                      className="w-4 h-4 rounded-full border border-rim shrink-0"
-                      style={{ background: v.color }}
-                      title={v.label}
-                    />
-                  ))}
-                </div>
-              )}
-
               <p className="text-dim text-xs">
-                {product.variants?.length || 0} variants · {product.materials?.length || 0} materials
+                {product.parts?.length || 0} parts · ${product.basePrice || 0} base
               </p>
             </div>
           ))}

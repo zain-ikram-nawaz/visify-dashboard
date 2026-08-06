@@ -21,7 +21,6 @@ export default function NewConfiguratorPage() {
     description: '',
     baseModelUrl: '',
     baseModelName: 'Base',
-    basePrice: 0,
     shopifyHandle: '',
     backgroundColor: '#0f0f0f',
     environmentLight: 'studio',
@@ -64,7 +63,7 @@ export default function NewConfiguratorPage() {
       toast.success('Configurator created');
       router.push(`/dashboard/configurator/${res.data.product._id}`);
     } catch (err) {
-      toast.error('Failed to create configurator');
+      toast.error(err.response?.data?.message || 'Failed to create configurator');
     } finally {
       setLoading(false);
     }
@@ -157,19 +156,6 @@ export default function NewConfiguratorPage() {
             )}
           </div>
 
-          {/* Base Price */}
-          <div className="p-5 border-b border-rim">
-            <label className={labelClass}>Base Price ($)</label>
-            <input
-              type="number"
-              value={form.basePrice}
-              onChange={(e) => set('basePrice', parseFloat(e.target.value) || 0)}
-              placeholder="0"
-              min="0"
-              className={inputClass}
-            />
-          </div>
-
           {/* Shopify Handle */}
           <div className="p-5 border-b border-rim">
             <label className={labelClass}>
@@ -182,7 +168,11 @@ export default function NewConfiguratorPage() {
               placeholder="e.g. custom-van-builder"
               className={inputClass}
             />
-            <p className="text-dim text-xs mt-2">Shopify Admin → Products → your product → Search engine listing → Handle</p>
+            <p className="text-dim text-xs mt-2">
+              Shopify Admin → Products → your product → Search engine listing → Handle.
+              Base price is pulled automatically from that product&apos;s real Shopify
+              price — you never type it by hand.
+            </p>
           </div>
 
           {/* Environment Lighting */}

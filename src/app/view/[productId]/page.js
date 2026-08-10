@@ -55,7 +55,7 @@ export default function ViewerPage() {
   /* Fetch product via public API */
   useEffect(() => {
     if (!productId || !apiKey) return;
-    const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+    const base = process.env.NEXT_PUBLIC_API_URL || 'https://visify-backend.zingcalc.com/api';
     fetch(`${base}/public/products/${productId}`, {
       headers: { 'X-API-Key': apiKey },
     })
@@ -81,7 +81,7 @@ export default function ViewerPage() {
     if (!product || scriptInjected.current || !viewerRef.current) return;
     scriptInjected.current = true;
 
-    const viewerBaseUrl = (process.env.NEXT_PUBLIC_VIEWER_URL || 'http://localhost:5173').replace(/\/$/, '');
+    const viewerBaseUrl = (process.env.NEXT_PUBLIC_VIEWER_URL || 'https://viewer.zingcalc.com').replace(/\/$/, '');
     const viewerScriptPath =
       viewerBaseUrl.includes('localhost') || viewerBaseUrl.includes('127.0.0.1')
         ? '/src/index.js'
@@ -93,7 +93,7 @@ export default function ViewerPage() {
 
     // The viewer script reads these globals (not the data-* attributes above)
     // to decide which product to fetch — must be set before it loads.
-    window.VISIFY_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+    window.VISIFY_API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://visify-backend.zingcalc.com/api';
     window.VISIFY_API_KEY = apiKey;
     window.VISIFY_SHOP_DOMAIN = product.shopDomain || '';
     window.VISIFY_PRODUCT_ID = product.shopifyHandle || productId;

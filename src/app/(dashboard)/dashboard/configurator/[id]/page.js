@@ -77,13 +77,13 @@ export default function ConfiguratorBuilderPage() {
 
     viewerInjectedRef.current = true;
 
-    const viewerBaseUrl = (process.env.NEXT_PUBLIC_VIEWER_URL || 'http://localhost:5173').replace(/\/$/, '');
+    const viewerBaseUrl = (process.env.NEXT_PUBLIC_VIEWER_URL || 'https://viewer.zingcalc.com').replace(/\/$/, '');
     const viewerScriptPath =
       viewerBaseUrl.includes('localhost') || viewerBaseUrl.includes('127.0.0.1')
         ? '/src/index.js'
         : '/embed.iife.js';
 
-    window.VISIFY_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+    window.VISIFY_API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://visify-backend.zingcalc.com/api';
     window.VISIFY_API_KEY = brand.apiKey;
     window.VISIFY_SHOP_DOMAIN = brand.shopDomain || '';
     window.VISIFY_PRODUCT_ID = product.shopifyHandle || id;
@@ -225,7 +225,7 @@ export default function ConfiguratorBuilderPage() {
     );
   }
 
-  const embedCode = `<div id="visify-configurator"></div>\n<script>\n  window.VISIFY_API_KEY = '${brand?.apiKey || '...'}' ;\n  window.VISIFY_PRODUCT_ID = '{{ product.handle }}';\n<\/script>\n<script type="module" src="${process.env.NEXT_PUBLIC_VIEWER_URL || 'http://localhost:5173'}/src/index.js"><\/script>`;
+  const embedCode = `<div id="visify-configurator"></div>\n<script>\n  window.VISIFY_API_KEY = '${brand?.apiKey || '...'}' ;\n  window.VISIFY_PRODUCT_ID = '{{ product.handle }}';\n<\/script>\n<script type="module" src="${process.env.NEXT_PUBLIC_VIEWER_URL || 'https://viewer.zingcalc.com'}/src/index.js"><\/script>`;
 
   const tabs = ['parts', 'embed'];
 

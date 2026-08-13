@@ -64,23 +64,10 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 gap-4 mb-6">
         <div className="bg-surface border border-rim rounded-xl p-5">
           <p className="text-[11px] text-muted uppercase tracking-widest mb-3 font-medium">Total Configurators</p>
           <p className="text-4xl font-bold text-snow tabular-nums">{products.length}</p>
-        </div>
-        <div className="bg-surface border border-rim rounded-xl p-5">
-          <p className="text-[11px] text-muted uppercase tracking-widest mb-3 font-medium">Current Plan</p>
-          <p className="text-4xl font-bold text-snow capitalize">{brand?.plan || '—'}</p>
-        </div>
-        <div className="bg-surface border border-rim rounded-xl p-5">
-          <p className="text-[11px] text-muted uppercase tracking-widest mb-3 font-medium">Status</p>
-          <div className="flex items-center gap-2.5 mt-1">
-            <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${brand?.subscriptionStatus === 'active' ? 'bg-ok' : 'bg-bad'}`} />
-            <p className={`text-2xl font-bold capitalize ${brand?.subscriptionStatus === 'active' ? 'text-ok' : 'text-bad'}`}>
-              {brand?.subscriptionStatus || 'active'}
-            </p>
-          </div>
         </div>
       </div>
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
+import { API_BASE_URL } from '../../../../lib/api';
 
 /* ─── Icons ───────────────────────────────────────────────────────────────── */
 function IconRotate() {
@@ -55,8 +56,7 @@ export default function ViewerPage() {
   /* Fetch product via public API */
   useEffect(() => {
     if (!productId || !apiKey) return;
-    const base = process.env.NEXT_PUBLIC_API_URL || 'https://visify-backend.zingcalc.com/api';
-    fetch(`${base}/public/products/${productId}`, {
+    fetch(`${API_BASE_URL}/public/products/${productId}`, {
       headers: { 'X-API-Key': apiKey },
     })
       .then((r) => {
@@ -93,7 +93,7 @@ export default function ViewerPage() {
 
     // The viewer script reads these globals (not the data-* attributes above)
     // to decide which product to fetch — must be set before it loads.
-    window.VISIFY_API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://visify-backend.zingcalc.com/api';
+    window.VISIFY_API_URL = API_BASE_URL;
     window.VISIFY_API_KEY = apiKey;
     window.VISIFY_SHOP_DOMAIN = product.shopDomain || '';
     window.VISIFY_PRODUCT_ID = product.shopifyHandle || productId;

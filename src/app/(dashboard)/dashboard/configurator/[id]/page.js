@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import toast from 'react-hot-toast';
-import api from '../../../../../../lib/api';
+import api, { API_BASE_URL } from '../../../../../../lib/api';
 
 const inputClass =
   'w-full bg-elevated border border-rim rounded-lg px-4 py-3 text-snow placeholder:text-dim focus:outline-none focus:border-volt transition-colors text-sm';
@@ -83,7 +83,7 @@ export default function ConfiguratorBuilderPage() {
         ? '/src/index.js'
         : '/embed.iife.js';
 
-    window.VISIFY_API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://visify-backend.zingcalc.com/api';
+    window.VISIFY_API_URL = API_BASE_URL;
     window.VISIFY_API_KEY = brand.apiKey;
     window.VISIFY_SHOP_DOMAIN = brand.shopDomain || '';
     window.VISIFY_PRODUCT_ID = product.shopifyHandle || id;

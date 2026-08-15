@@ -1,15 +1,11 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 import Cookies from 'js-cookie';
 import api from '../../../../lib/api';
 
-// Landing page for the "Open Visify dashboard" button inside the Shopify
-// embedded app. Exchanges the short-lived token minted by visify-backend for
-// a real 7-day session — merchants with a shop-linked Brand never type an
-// email/password.
 export default function SsoPage() {
   return (
     <Suspense fallback={<SsoScreen message="Signing you in…" />}>
@@ -23,9 +19,11 @@ function SsoExchange() {
   const searchParams = useSearchParams();
   const ssoToken = searchParams.get('token');
   const [error, setError] = useState(null);
+  const calledRef = useRef(false); // Prevents duplicate calls
 
   useEffect(() => {
-    if (!ssoToken) return;
+    if (!ssoToken || calledRef.current) return;
+    calledRef.current = true; // Mark as called immediately
 
     api
       .post('/auth/sso/consume', { ssoToken })

@@ -233,7 +233,9 @@ export default function ConfiguratorBuilderPage() {
       toast.success('Shopify product data synced');
       fetchProduct();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to sync price');
+      const apiMessage = err.response?.data?.message;
+      const detail = err.response?.data?.error;
+      toast.error(detail ? `${apiMessage || 'Failed to sync price'}: ${detail}` : (apiMessage || 'Failed to sync price'));
     } finally {
       setSyncingPrice(false);
     }

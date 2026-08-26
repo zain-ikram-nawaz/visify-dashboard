@@ -11,6 +11,14 @@ const labelClass = 'block text-[11px] text-muted uppercase tracking-widest mb-2 
 
 const CATEGORIES = ['general', 'exterior', 'interior', 'wheels', 'accessories'];
 
+function formatMoney(value, currency = 'USD') {
+  try {
+    return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(Number(value) || 0);
+  } catch {
+    return `${currency} ${(Number(value) || 0).toFixed(2)}`;
+  }
+}
+
 /* ── Icons ───────────────────────────────────────────────────────────────── */
 function IconCube() {
   return (
@@ -58,10 +66,11 @@ export default function ConfiguratorBuilderPage() {
   const [showAddPart, setShowAddPart] = useState(false);
   const [showAddVariant, setShowAddVariant] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
   const [uploadingTexture, setUploadingTexture] = useState(false);
 
   const [partForm, setPartForm] = useState({
-    name: '', description: '', modelUrl: '', category: 'general',
+    name: '', description: '', modelUrl: '', thumbnailUrl: '', category: 'general',
     basePrice: 0, isDefault: false, isRequired: false,
   });
   const [variantForm, setVariantForm] = useState({
@@ -129,11 +138,11 @@ export default function ConfiguratorBuilderPage() {
     try {
       const formData = new FormData();
       formData.append('model', file);
-      const res = await api.post('/upload/model', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const res = await api.post('/upload/model', formData);
       setPartForm((prev) => ({ ...prev, modelUrl: res.data.modelUrl }));
       toast.success('Part model uploaded');
-    } catch {
-      toast.error('Upload failed');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Upload failed');
     } finally {
       setUploading(false);
     }
@@ -146,13 +155,34 @@ export default function ConfiguratorBuilderPage() {
     try {
       const formData = new FormData();
       formData.append('texture', file);
-      const res = await api.post('/upload/texture', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const res = await api.post('/upload/texture', formData);
       setVariantForm((prev) => ({ ...prev, value: res.data.textureUrl }));
       toast.success('Texture uploaded');
-    } catch {
-      toast.error('Upload failed');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Upload failed');
     } finally {
       setUploadingTexture(false);
+    }
+  };
+
+  const handlePartThumbnailUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+    setUploadingThumbnail(true);
+    try {
+      const formData = new FormData();
+      formData.append('thumbnail', file);
+      const res = await api.post('/upload/thumbnail', formData);
+      setPartForm((prev) => ({ ...prev, thumbnailUrl: res.data.thumbnailUrl }));
+      toast.success('Part thumbnail uploaded');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Thumbnail upload failed');
+    } finally {
+      setUploadingThumbnail(false);
     }
   };
 
@@ -163,7 +193,7 @@ export default function ConfiguratorBuilderPage() {
       await api.post(`/configurator/products/${id}/parts`, partForm);
       toast.success('Part added');
       setShowAddPart(false);
-      setPartForm({ name: '', description: '', modelUrl: '', category: 'general', basePrice: 0, isDefault: false, isRequired: false });
+      setPartForm({ name: '', description: '', modelUrl: '', thumbnailUrl: '', category: 'general', basePrice: 0, isDefault: false, isRequired: false });
       fetchProduct();
     } catch { toast.error('Failed to add part'); }
   };
@@ -200,7 +230,7 @@ export default function ConfiguratorBuilderPage() {
     setSyncingPrice(true);
     try {
       await api.post(`/configurator/products/${id}/sync-price`);
-      toast.success('Price synced from Shopify');
+      toast.success('Shopify product data synced');
       fetchProduct();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to sync price');
@@ -292,7 +322,7 @@ export default function ConfiguratorBuilderPage() {
         <div className="border-t border-rim px-6 py-3 flex items-center justify-between bg-void shrink-0">
           <div>
             <span className="text-snow font-semibold text-sm">{product.name}</span>
-            <span className="text-dim text-xs ml-2">${product.basePrice} base</span>
+            <span className="text-dim text-xs ml-2">{formatMoney(product.basePrice, product.currencyCode)} base</span>
           </div>
           <div className="flex items-center gap-2">
             <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
@@ -372,6 +402,7 @@ export default function ConfiguratorBuilderPage() {
                   <PartCard
                     key={part._id}
                     part={part}
+                    currencyCode={product.currencyCode}
                     showAddVariant={showAddVariant}
                     setShowAddVariant={setShowAddVariant}
                     variantForm={variantForm}
@@ -406,10 +437,26 @@ export default function ConfiguratorBuilderPage() {
                   )}
                 </div>
                 <div className="bg-elevated border border-rim rounded-lg px-4 py-3">
-                  <span className="text-snow text-sm font-semibold">${(product.basePrice || 0).toFixed(2)}</span>
+                  {product.shopifyImageUrl && (
+                    <img
+                      src={product.shopifyImageUrl}
+                      alt={product.shopifyImageAlt || product.name}
+                      className="w-full h-32 object-cover rounded-md mb-3"
+                    />
+                  )}
+                  <span className="text-snow text-sm font-semibold">{formatMoney(product.basePrice, product.currencyCode)}</span>
+                  {product.shopifyHandle && (
+                    <span className={`ml-2 text-[10px] ${
+                      product.shopifySyncStatus === 'error' ? 'text-bad' :
+                        product.shopifySyncStatus === 'synced' ? 'text-ok' : 'text-warn'
+                    }`}>
+                      {product.shopifySyncStatus === 'error' ? 'Sync failed' :
+                        product.shopifySyncStatus === 'synced' ? 'Synced' : 'Pending sync'}
+                    </span>
+                  )}
                   <p className="text-dim text-xs mt-1">
                     {product.shopifyHandle
-                      ? 'Synced from this product’s real Shopify price — updates automatically when it changes in Shopify admin.'
+                      ? 'Price and image synced from this product’s Shopify data.'
                       : 'Set a Shopify Handle below to auto-sync this from the real product price.'}
                   </p>
                 </div>
@@ -487,6 +534,27 @@ export default function ConfiguratorBuilderPage() {
                 <label className={labelClass}>Description <span className="text-dim normal-case tracking-normal">— optional</span></label>
                 <input type="text" value={partForm.description} onChange={(e) => setPartForm({ ...partForm, description: e.target.value })}
                   placeholder="Short description" className={inputClass} />
+              </div>
+
+              <div>
+                <label className={labelClass}>Part Thumbnail <span className="text-dim normal-case tracking-normal">— optional</span></label>
+                {partForm.thumbnailUrl ? (
+                  <div className="flex items-center gap-3 bg-ok/5 border border-ok/20 rounded-lg px-3 py-2">
+                    <img src={partForm.thumbnailUrl} alt="Part thumbnail" className="w-12 h-12 rounded-md object-cover" />
+                    <span className="text-ok text-sm flex-1">Thumbnail uploaded</span>
+                    <button type="button" onClick={() => setPartForm({ ...partForm, thumbnailUrl: '' })}
+                      className="text-muted hover:text-snow text-xs transition-colors">Remove</button>
+                  </div>
+                ) : (
+                  <label className="block cursor-pointer">
+                    <div className={`border border-dashed rounded-lg px-3 py-3 text-center transition-colors ${
+                      uploadingThumbnail ? 'border-volt bg-volt/5' : 'border-rim hover:border-volt/40'
+                    }`}>
+                      {uploadingThumbnail ? <div className="vspin mx-auto" /> : <span className="text-dim text-xs">Upload JPG, PNG or WebP</span>}
+                    </div>
+                    <input type="file" accept="image/*" onChange={handlePartThumbnailUpload} className="hidden" disabled={uploadingThumbnail} />
+                  </label>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -571,7 +639,7 @@ export default function ConfiguratorBuilderPage() {
 }
 
 /* ── Part Card ────────────────────────────────────────────────────────────── */
-function PartCard({ part, showAddVariant, setShowAddVariant, variantForm, setVariantForm,
+function PartCard({ part, currencyCode, showAddVariant, setShowAddVariant, variantForm, setVariantForm,
   onDeletePart, onAddVariant, onDeleteVariant, inputClass, labelClass,
   uploadingTexture, onVariantTextureUpload }) {
   return (
@@ -579,6 +647,13 @@ function PartCard({ part, showAddVariant, setShowAddVariant, variantForm, setVar
 
       {/* Part header */}
       <div className="flex items-start justify-between p-4 pb-3">
+        {part.thumbnailUrl ? (
+          <img src={part.thumbnailUrl} alt={part.name} className="w-14 h-14 rounded-lg object-cover mr-3 shrink-0" />
+        ) : (
+          <div className="w-14 h-14 rounded-lg bg-surface border border-rim flex items-center justify-center mr-3 shrink-0">
+            <IconCube />
+          </div>
+        )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-0.5">
             <h3 className="font-semibold text-snow text-sm">{part.name}</h3>
@@ -591,7 +666,7 @@ function PartCard({ part, showAddVariant, setShowAddVariant, variantForm, setVar
           </div>
           <div className="flex gap-2.5 text-[11px] text-dim">
             <span className="capitalize">{part.category}</span>
-            {part.basePrice > 0 && <><span>·</span><span>+${part.basePrice}</span></>}
+            {part.basePrice > 0 && <><span>·</span><span>+{formatMoney(part.basePrice, currencyCode)}</span></>}
             <span>·</span>
             <span>{part.variants.length} variants</span>
           </div>
@@ -632,7 +707,7 @@ function PartCard({ part, showAddVariant, setShowAddVariant, variantForm, setVar
                 )}
                 <span className="text-[11px] text-muted">{v.label}</span>
                 {v.priceModifier !== 0 && (
-                  <span className="text-[10px] text-ok">+${v.priceModifier}</span>
+                  <span className="text-[10px] text-ok">+{formatMoney(v.priceModifier, currencyCode)}</span>
                 )}
                 <button onClick={() => onDeleteVariant(part._id, v._id)}
                   className="text-dim hover:text-bad text-xs ml-0.5 transition-colors leading-none">×</button>

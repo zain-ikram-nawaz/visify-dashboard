@@ -39,13 +39,12 @@ export default function NewConfiguratorPage() {
     try {
       const formData = new FormData();
       formData.append('model', file);
-      const res = await api.post('/upload/model', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      // Let the browser/Axios set the multipart boundary automatically.
+      const res = await api.post('/upload/model', formData);
       set('baseModelUrl', res.data.modelUrl);
       toast.success('Model uploaded');
     } catch (err) {
-      toast.error('Upload failed');
+      toast.error(err.response?.data?.message || 'Upload failed');
     } finally {
       setUploading(false);
     }
@@ -60,7 +59,8 @@ export default function NewConfiguratorPage() {
     setLoading(true);
     try {
       const res = await api.post('/configurator/products', form);
-      toast.success('Configurator created');
+      if (res.data.warning) toast.error(`Configurator created, but Shopify sync failed: ${res.data.warning}`);
+      else toast.success('Configurator created');
       router.push(`/dashboard/configurator/${res.data.product._id}`);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to create configurator');
@@ -170,8 +170,8 @@ export default function NewConfiguratorPage() {
             />
             <p className="text-dim text-xs mt-2">
               Shopify Admin → Products → your product → Search engine listing → Handle.
-              Base price is pulled automatically from that product&apos;s real Shopify
-              price — you never type it by hand.
+              Base price and featured image are pulled automatically from that
+              product&apos;s Shopify data — you never type the base price by hand.
             </p>
           </div>
 

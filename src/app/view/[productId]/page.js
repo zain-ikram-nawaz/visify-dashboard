@@ -4,6 +4,16 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { API_BASE_URL } from '../../../../lib/api';
 
+async function readJsonResponse(response) {
+  const text = await response.text();
+  try {
+    return text ? JSON.parse(text) : {};
+  } catch {
+    const contentType = response.headers.get('content-type') || 'unknown content type';
+    throw new Error(`API returned a non-JSON response (${response.status}, ${contentType}). Check NEXT_PUBLIC_API_URL.`);
+  }
+}
+
 /* ─── Icons ───────────────────────────────────────────────────────────────── */
 function IconRotate() {
   return (
@@ -53,7 +63,7 @@ export default function ViewerPage() {
   const [copied, setCopied] = useState(false);
   const [viewerReady, setViewerReady] = useState(false);
 
-  /* Fetch product via public API */
+
   useEffect(() => {
     if (!productId || !apiKey) return;
     fetch(`${API_BASE_URL}/public/products/${productId}`, {
@@ -61,11 +71,11 @@ export default function ViewerPage() {
     })
       .then((r) => {
         if (!r.ok) throw new Error('Product not found');
-        return r.json();
+        return readJsonResponse(r);
       })
       .then((data) => {
         setProduct(data.product);
-        /* initialise default selections */
+       
         const defaults = {};
         (data.product.parts || []).forEach((p) => {
           if (p.isDefault) defaults[p._id] = true;

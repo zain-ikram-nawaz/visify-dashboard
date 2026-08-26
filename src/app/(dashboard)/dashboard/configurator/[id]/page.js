@@ -459,6 +459,9 @@ export default function ConfiguratorBuilderPage() {
                       ? 'Price and image synced from this product’s Shopify data.'
                       : 'Set a Shopify Handle below to auto-sync this from the real product price.'}
                   </p>
+                  {product.shopifySyncError && (
+                    <p className="text-bad text-[11px] mt-2 break-words">{product.shopifySyncError}</p>
+                  )}
                 </div>
               </div>
 
